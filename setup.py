@@ -7,7 +7,7 @@ packages = [
 ]
 
 core.setup(
-    name = "cgi2wsgi",
+    name = "wsgi2wsgi",
     version = "1.0",
     packages = packages,
     license = "Apache 2.0 Licence",
