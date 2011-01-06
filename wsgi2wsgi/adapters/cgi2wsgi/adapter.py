@@ -1,4 +1,4 @@
-# COPYRIGHT 2010 GRAHAM DUMPLETON
+# COPYRIGHT 2010-2011 GRAHAM DUMPLETON
 
 # Robust CGI/WSGI adapter which protects stdin/stdout and
 # performs other validity checks on type of status line, headers
@@ -10,7 +10,22 @@ import sys
 import cStringIO
 import types
 import imp
+import string
 
+
+class FileWrapper:
+
+    def __init__(self, filelike, blksize=8192):
+        self.filelike = filelike
+        self.blksize = blksize
+        if hasattr(filelike, 'close'):
+              self.close = filelike.close
+
+    def __getitem__(self, key):
+        data = self.filelike.read(self.blksize)
+        if data:
+            return data
+        raise IndexError
 
 class Adapter(object):
 
@@ -54,7 +69,7 @@ class Adapter(object):
 
             if name.lower() == 'content-length':
                 try:
-                    length = atoi(value)
+                    length = string.atoi(value)
                 except:
                     raise ValueError("invalid content length")
                 if length < 0:
@@ -239,6 +254,14 @@ class Adapter(object):
             self._environ['wsgi.url_scheme'] = 'https'
         else:
             self._environ['wsgi.url_scheme'] = 'http'
+
+        # Add in FileWrapper class object for 'wsgi.file_wrapper'.
+        # We don't actually provide an platform specific optimised
+        # version of this, but this should really be mandatory to
+        # be supplied even if not optimised so that users don't
+        # need to provide their own implementation.
+
+        self._environ['wsgi.file_wrapper'] = FileWrapper
 
         # Result from WSGI application should be an iterable. We
         # loop over that and write out data until reach amount as
